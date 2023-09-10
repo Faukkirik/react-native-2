@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {
     FlatList,
     ListRenderItem,
@@ -6,15 +6,23 @@ import {
     View,
     StyleSheet,
     TextInput,
-    TouchableOpacity,
+    TouchableOpacity, RefreshControl,
 } from "react-native";
+import {MemoSvgComponent} from "./svg/MySvg";
+import {MemoSvgDay} from "./svg/SvgDay";
+
 
 type TaskType = {
     key: string
     title: string
     isDone: boolean
 }
+const wait = (timeout: any) => {
+    return new Promise(resolve => setTimeout(resolve, timeout))
+}
 export const Main = () => {
+    const [refreshing, setRefreshing] = useState<boolean>(false)
+
     const [tasks, setTasks] = useState<TaskType[]>([
         {
             key: '1',
@@ -34,17 +42,27 @@ export const Main = () => {
         }
     ])
     const [title, setTitle] = useState<string>('')
+    const onRefresh = useCallback(() => {
+        setRefreshing(true)
+        wait(2000).then(() => setRefreshing(false))
+    }, [])
     const render: ListRenderItem<TaskType> = ({item}) => {
         return (
             <View>
                 <TouchableOpacity
                     style={[styles.item, {opacity: item.isDone ? 0.5 : 1}]}
-                    onLongPress={()=> removeTasks(item.key)}
-                    onPress={()=> updateTask(item.key)}
+                    onLongPress={() => removeTasks(item.key)}
+                    onPress={() => updateTask(item.key)}
                 >
                     <>
-                        <Text style={[styles.title, {textDecorationLine: item.isDone ? 'line-through' : 'none'}]}>{item.title}</Text>
-                        <Text>{item.isDone ? 'true' : 'false'}</Text>
+                        <Text
+                            style={[styles.title, {textDecorationLine: item.isDone ? 'line-through' : 'none'}]}>{item.title}</Text>
+                        <Text style={{paddingRight: 30}}>{item.isDone ? 'true' : 'false'}</Text>
+                        <MemoSvgComponent
+                            style={{position: 'absolute', bottom: 3, right: 2}}
+                            onPress={() => removeTasks(item.key)}
+                        />
+                        <MemoSvgDay style={{position: 'absolute', bottom: 15, right: 100}}/>
                     </>
                 </TouchableOpacity>
             </View>
@@ -60,10 +78,10 @@ export const Main = () => {
         setTitle('')
     };
     const removeTasks = (key: string) => {
-        setTasks(tasks.filter(el=> el.key !== key))
+        setTasks(tasks.filter(el => el.key !== key))
     }
-    const updateTask = (key: string)=>{
-        setTasks(tasks.map(el=> el.key === key ? {...el, isDone: !el.isDone} : el))
+    const updateTask = (key: string) => {
+        setTasks(tasks.map(el => el.key === key ? {...el, isDone: !el.isDone} : el))
     }
     const renderHeader = () => {
         return (
@@ -86,6 +104,12 @@ export const Main = () => {
             <FlatList
                 data={tasks}
                 renderItem={render}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                }
                 //ListHeaderComponent={renderHeader}
             />
         </View>
