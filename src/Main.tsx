@@ -103,7 +103,7 @@ export const Main = () => {
             </View>
             <FlatList
                 data={tasks}
-                renderItem={render}
+                renderItem={render }
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
